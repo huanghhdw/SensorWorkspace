@@ -19,16 +19,18 @@ find_package(Ceres)
 include_directories(${PROJECT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${CERES_INCLUDE_DIRS})
 
 # add sourcce files: *.cpp
-aux_source_directory(./src  SRC_LIST)
+#aux_source_directory(./src  SRC_LIST)
 
 #设置可执行文件目录
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin/) 
 
 #生成可执行文件
-add_executable(${PROJECT_NAME} ${SRC_LIST})
-
+add_executable(${PROJECT_NAME} ./src/main.cpp)
+add_executable(${PROJECT_NAME}_line ./src/line.cpp)
 # 链接OpenCV,Ceres库
+
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_line ${OpenCV_LIBS} ${CERES_LIBRARIES})
 message("---------------success in generate executeFile in path: ${PROJECT_SOURCE_DIR}/build/bin/-------------------")
 
 enable_testing()
