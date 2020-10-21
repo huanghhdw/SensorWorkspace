@@ -22,7 +22,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS} ${EIGEN
 #aux_source_directory(./src  SRC_LIST)
 
 #设置可执行文件目录
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin/) 
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/../build/bin/) 
 
 #生成可执行文件
 add_executable(${PROJECT_NAME} ./src/main.cpp)

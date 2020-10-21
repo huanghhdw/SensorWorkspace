@@ -1,13 +1,20 @@
 #include <gtest/gtest.h>
+// #include <common.h>
 
 int add(int a,int b){
     return a+b;
 }
 
-TEST(double_camera_test, equal_test)
+TEST(all_test, equal_test)
 {
     EXPECT_EQ(add(2,3),5);
 }
+
+// TEST(all_test, UpdateAllWithEulerT_test)
+// {
+//     CameraPose cameraPose;
+//     EXPECT_EQ(add(2,3),5);
+// }
 
 int main(int argc,char **argv){
   testing::InitGoogleTest(&argc,argv);

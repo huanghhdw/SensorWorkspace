@@ -4,7 +4,7 @@
 #include <glog/logging.h>
 #include <opencv2/opencv.hpp>
 #include<Eigen/Core>
-
+#include <common.h>
 using namespace std;
 using namespace cv;
 
