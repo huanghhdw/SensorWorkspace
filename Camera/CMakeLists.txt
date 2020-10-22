@@ -25,12 +25,14 @@ include_directories(${PROJECT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS} ${EIGEN
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/../build/bin/) 
 
 #生成可执行文件
-add_executable(${PROJECT_NAME} ./src/main.cpp)
+add_executable(${PROJECT_NAME} ./src/main.cpp ./src/common.cpp)
 add_executable(${PROJECT_NAME}_line ./src/line.cpp)
-# 链接OpenCV,Ceres库
+add_executable(${PROJECT_NAME}_gainsensordata ./src/gainsensordata.cpp)
 
+# 链接OpenCV,Ceres库
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES})
 target_link_libraries(${PROJECT_NAME}_line ${OpenCV_LIBS} ${CERES_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_gainsensordata ${OpenCV_LIBS} ${CERES_LIBRARIES})
 message("---------------success in generate executeFile in path: ${PROJECT_SOURCE_DIR}/build/bin/-------------------")
 
 enable_testing()
