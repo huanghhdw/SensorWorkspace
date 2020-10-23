@@ -36,4 +36,5 @@
 */build/*
 /bin/*
 */bin/*
-
+.idea/
+cmake-build-debug/

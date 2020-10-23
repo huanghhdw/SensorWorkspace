@@ -24,10 +24,13 @@ include_directories(${PROJECT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS} ${EIGEN
 #设置可执行文件目录
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/../build/bin/) 
 
+#生成库文件
+#add_library(codeToTest ../src/common.cpp)
+
 #生成可执行文件
-add_executable(${PROJECT_NAME} ./src/main.cpp ./src/common.cpp)
+add_executable(${PROJECT_NAME} ./src/main.cpp)
 add_executable(${PROJECT_NAME}_line ./src/line.cpp)
-add_executable(${PROJECT_NAME}_gainsensordata ./src/gainsensordata.cpp)
+add_executable(${PROJECT_NAME}_gainsensordata ./src/start_node.cpp)
 
 # 链接OpenCV,Ceres库
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES})

@@ -7,6 +7,7 @@
 #include <common.h>
 using namespace std;
 using namespace cv;
+using namespace Eigen;
 
 using ceres::AutoDiffCostFunction;
 using ceres::CostFunction;
@@ -14,6 +15,7 @@ using ceres::Problem;
 using ceres::Solve;
 using ceres::Solver;
 
+const double PI = 3.141592653;
 // A templated cost functor that implements the residual r = 10 -
 // x. The method operator() is templated so that we can then use an
 // automatic differentiation wrapper around it to generate its
@@ -164,7 +166,7 @@ int main(int argc, char** argv)
 	Solver::Options options;
 	options.minimizer_progress_to_stdout = true;
 	Solver::Summary summary;
-	Solve(options, &problem, &summary);
+	ceres::Solve(options, &problem, &summary);
 	std::cout << summary.BriefReport() << "\n";
 	std::cout << "x : " << initial_x << " -> " << x << "\n";
 	google::ShutdownGoogleLogging();
@@ -380,4 +382,74 @@ void pose_estimation_2d2d ( std::vector<KeyPoint> keypoints_1,
     cout<<"R is "<<endl<<R<<endl;
     cout<<"t is "<<endl<<t<<endl;
     
+}
+
+void ICP(const vector<Vector3f>& pts1,const vector<Vector3f>& pts2)
+{
+
+	Vector3f p1, p2;     // center of mass
+
+	int N = pts1.size();
+
+	for (int i = 0; i<N; i++)
+
+	{
+
+		p1 += pts1[i];
+
+		p2 += pts2[i];
+
+	}
+
+	p1 = Vector3f((p1) / N);
+
+	p2 = Vector3f((p2) / N);
+
+	vector<Vector3f> q1(N), q2(N); // remove the center
+
+	for (int i = 0; i<N; i++)
+
+	{
+
+		q1[i] = pts1[i] - p1;
+
+		q2[i] = pts2[i] - p2;
+
+	}
+
+	// compute q1*q2^T
+
+	Eigen::Matrix3f W = Eigen::Matrix3f::Zero();
+
+	for (int i = 0; i<N; i++)
+
+	{
+
+		W += Eigen::Vector3f(q1[i](0), q1[i](1), q1[i](2)) * Eigen::Vector3f(q2[i](0), q2[i](1), q2[i](2)).transpose();
+
+	}
+
+	// SVD on W
+
+	Eigen::JacobiSVD<Eigen::Matrix3f> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+	Eigen::Matrix3f U = svd.matrixU();
+
+	Eigen::Matrix3f V = svd.matrixV();
+
+	Eigen::Matrix3f R_12 = U* (V.transpose());
+
+	Eigen::Vector3f t_12 = Eigen::Vector3f(p1(0), p1(1), p1(2)) - R_12 * Eigen::Vector3f(p2(0), p2(1), p2(2));
+
+	// 验证
+
+	Eigen::AngleAxisf R_21;
+
+	R_21.fromRotationMatrix(R_12.transpose());
+
+	cout << "aix: " << R_21.axis().transpose() << endl;
+
+	cout << "angle: " << R_21.angle() * 180 / PI << endl;
+
+	cout << "t: " << (-R_12.transpose()*t_12).transpose() << endl;
 }
