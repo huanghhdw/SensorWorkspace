@@ -14,6 +14,28 @@ int main(int argc, char** argv)
 	string sequence = "/home/huanghh/data/08";
 	string dataPath = sequence + "/";
 
+    FILE *fh = fopen("/home/huanghh/hhh_ws/SensorWorkspace/Camera/config/kitti_odom/cam04-12.yaml","r");
+    if(fh == NULL){
+        return -1;
+    }
+    fclose(fh);
+
+    cv::FileStorage fsSettings("/home/huanghh/hhh_ws/SensorWorkspace/Camera/config/kitti_odom/cam04-12.yaml", cv::FileStorage::READ);
+    if(!fsSettings.isOpened())
+    {
+        std::cerr << "ERROR: Wrong path to settings" << std::endl;
+    }
+    int sizeU, sizeV;
+    fsSettings["image_width"] >> sizeU;
+    fsSettings["image_height"] >> sizeV;
+    double fx, fy;
+    fsSettings["projection_parameters"]["fx"] >> fx;
+    fsSettings["projection_parameters"]["fy"] >> fy;
+    cout << "sizeU: " << sizeU << " sizeV: " << sizeV << endl;
+    cout << "fx: " << fx << " fy: " << fy << endl;
+    fsSettings.release();
+
+
 	// load image list
 	FILE* file;
 	file = std::fopen((dataPath + "times.txt").c_str() , "r");
