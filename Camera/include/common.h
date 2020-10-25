@@ -19,7 +19,7 @@ public:
     double cy_;
     CameraModel cameraModel_;
     std::vector<double> distortion_;
-} ;
+};
 
 class CameraPose {
 public:

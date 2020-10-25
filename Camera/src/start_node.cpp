@@ -25,6 +25,7 @@ void Stop(int)
 
 void ProcessDataThread() {
     ImageProcess::VisualOdom visualOdom;
+    visualOdom.InitCamInfo("/home/huanghh/hhh_ws/SensorWorkspace/Camera/config/kitti_odom/cam04-12.yaml");
     string OUTPUT_FOLDER = "/home/huanghh/";
     FILE *outFile;
     outFile = fopen((OUTPUT_FOLDER + "/vio.txt").c_str(), "w");
@@ -52,29 +53,6 @@ void ProcessDataThread() {
     }
     if (outFile != NULL)
         fclose(outFile);
-}
-
-void ParameterSetting()
-{
-    FILE *fh = fopen("/home/huanghh/hhh_ws/SensorWorkspace/Camera/config/kitti_odom/cam04-12.yaml","r");
-    if(fh == NULL){
-        return;
-    }
-    fclose(fh);
-    cv::FileStorage fsSettings("/home/huanghh/hhh_ws/SensorWorkspace/Camera/config/kitti_odom/cam04-12.yaml", cv::FileStorage::READ);
-    if(!fsSettings.isOpened())
-    {
-        std::cerr << "ERROR: Wrong path to settings" << std::endl;
-    }
-    int sizeU, sizeV;
-    fsSettings["image_width"] >> sizeU;
-    fsSettings["image_height"] >> sizeV;
-    double fx, fy;
-    fsSettings["projection_parameters"]["fx"] >> fx;
-    fsSettings["projection_parameters"]["fy"] >> fy;
-    cout << "sizeU: " << sizeU << " sizeV: " << sizeV << endl;
-    cout << "fx: " << fx << " fy: " << fy << endl;
-    fsSettings.release();
 }
 
 void PubDataThread()
