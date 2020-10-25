@@ -3,7 +3,7 @@ find_package(GTest REQUIRED)
 # GTest 的头文件
 include_directories(${GTEST_INCLUDE_DIRS} )
 
-add_library(codeToTest ../src/common.cpp)
+add_library(codeToTest ../src/common.cpp ../src/VisualOdom.cpp ../include/VisualOdom.h)
 
 add_executable(all_test main.cpp)
 
