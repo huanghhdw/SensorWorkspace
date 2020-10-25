@@ -33,7 +33,7 @@ void ImageProcess::VisualOdom::InitCamInfo(std::string camInfoPath)
     fsSettings["left_cam"]["image_height"] >> cameraIntrisicLeft_.imageRow_;
     fsSettings["left_cam"]["projection_parameters"]["fx"] >> cameraIntrisicLeft_.fx_;
     fsSettings["left_cam"]["projection_parameters"]["fy"] >> cameraIntrisicLeft_.fy_;
-    
+
     fsSettings["right_cam"]["image_width"] >> cameraIntrisicRight_.imageCol_;
     fsSettings["right_cam"]["image_height"] >> cameraIntrisicRight_.imageRow_;
     fsSettings["right_cam"]["projection_parameters"]["fx"] >> cameraIntrisicRight_.fx_;

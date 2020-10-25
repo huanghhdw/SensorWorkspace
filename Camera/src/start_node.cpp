@@ -1,13 +1,15 @@
 #include <iostream>
+#include <string>
 #include <thread>
-#include <stdio.h>
 #include <list>
+#include <atomic>
+#include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
+
 #include <opencv2/opencv.hpp>
-#include <string>
-#include <atomic>
 #include <Eigen/Core>
+
 #include <VisualOdom.h>
 
 using namespace std;
@@ -26,11 +28,10 @@ void Stop(int)
 void ProcessDataThread() {
     ImageProcess::VisualOdom visualOdom;
     visualOdom.InitCamInfo("/home/huanghh/hhh_ws/SensorWorkspace/Camera/config/kitti_odom/cam04-12.yaml");
-    string OUTPUT_FOLDER = "/home/huanghh/";
     FILE *outFile;
-    outFile = fopen((OUTPUT_FOLDER + "/vio.txt").c_str(), "w");
+    outFile = fopen("/home/huanghh/vio.txt", "w");
     if (outFile == NULL)
-        printf("Output path dosen't exist: %s\n", OUTPUT_FOLDER.c_str());
+        printf("Output path dosen't exist\n");
     while (!readyToExit) {
         usleep(5000);
         if (outFile != NULL) {
