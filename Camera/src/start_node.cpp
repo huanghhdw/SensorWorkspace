@@ -19,7 +19,7 @@ std::list<cv::Mat> imageRightList;
 
 void Stop(int)
 {
-    cout << "Program is soon stop!" << endl;
+    std::cout << "Program is soon stop!" << std::endl;
     readyToExit = true;
 }
 
@@ -42,8 +42,14 @@ void ProcessDataThread() {
                 imageRightList.pop_front();
                 visualOdom.ProcessImage(leftImage, rightImage);
                 visualOdom.GetCurrentPose(pose);
-                cv::imshow("leftImage", leftImage);
-                cv::imshow("rightImage", rightImage);
+                //For Visualization
+                int totalRows = leftImage.rows + rightImage.rows;
+                cv::Mat mergedPicture(totalRows, leftImage.cols, leftImage.type());
+                cv::Mat submat = mergedPicture.rowRange(0, leftImage.rows);
+                leftImage.copyTo(submat);
+                submat = mergedPicture.rowRange(leftImage.rows, totalRows);
+                rightImage.copyTo(submat);
+                cv::imshow("Image", mergedPicture);
                 cv::waitKey(1);
 //            fprintf (outFile, "%f %f %f %f %f %f %f %f %f %f %f %f \n",pose(0,0), pose(0,1), pose(0,2),pose(0,3),
 //                     pose(1,0), pose(1,1), pose(1,2),pose(1,3),

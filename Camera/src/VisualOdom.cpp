@@ -29,13 +29,13 @@ void ImageProcess::VisualOdom::InitCamInfo(std::string camInfoPath)
     {
         std::cerr << "ERROR: Wrong path to settings" << std::endl;
     }
-    int sizeU, sizeV;
-    fsSettings["image_width"] >> sizeU;
-    fsSettings["image_height"] >> sizeV;
-    double fx, fy;
-    fsSettings["projection_parameters"]["fx"] >> fx;
-    fsSettings["projection_parameters"]["fy"] >> fy;
-    cout << "sizeU: " << sizeU << " sizeV: " << sizeV << endl;
-    cout << "fx: " << fx << " fy: " << fy << endl;
-    fsSettings.release();
+    fsSettings["left_cam"]["image_width"] >> cameraIntrisicLeft_.imageCol_;
+    fsSettings["left_cam"]["image_height"] >> cameraIntrisicLeft_.imageRow_;
+    fsSettings["left_cam"]["projection_parameters"]["fx"] >> cameraIntrisicLeft_.fx_;
+    fsSettings["left_cam"]["projection_parameters"]["fy"] >> cameraIntrisicLeft_.fy_;
+    
+    fsSettings["right_cam"]["image_width"] >> cameraIntrisicRight_.imageCol_;
+    fsSettings["right_cam"]["image_height"] >> cameraIntrisicRight_.imageRow_;
+    fsSettings["right_cam"]["projection_parameters"]["fx"] >> cameraIntrisicRight_.fx_;
+    fsSettings["right_cam"]["projection_parameters"]["fy"] >> cameraIntrisicRight_.fy_;
 }

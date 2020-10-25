@@ -13,6 +13,8 @@ enum CameraModel{
 
 class CameraIntrisic {
 public:
+    int imageRow_;
+    int imageCol_;
     double fx_;
     double fy_;
     double cx_;
