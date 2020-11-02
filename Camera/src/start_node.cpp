@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
-#include <list>
+#include <queue>
 #include <atomic>
 #include <stdio.h>
 #include <unistd.h>
@@ -16,8 +16,8 @@ using namespace std;
 using namespace Eigen;
 
 std::atomic<bool> readyToExit(false);
-std::list<cv::Mat> imageLeftList;
-std::list<cv::Mat> imageRightList;
+std::queue<cv::Mat> imageLeftList;
+std::queue<cv::Mat> imageRightList;
 
 void Stop(int)
 {
@@ -39,8 +39,8 @@ void ProcessDataThread() {
             if (!imageLeftList.empty() && !imageRightList.empty()) {
                 cv::Mat leftImage =  imageLeftList.front();
                 cv::Mat rightImage =  imageRightList.front();
-                imageLeftList.pop_front();
-                imageRightList.pop_front();
+                imageLeftList.pop();
+                imageRightList.pop();
                 visualOdom.ProcessImage(leftImage, rightImage);
                 visualOdom.GetCurrentPose(pose);
                 //For Visualization
@@ -102,8 +102,8 @@ void PubDataThread()
         rightImagePath = dataPath + "image_1/" + ss.str() + ".png";
         imLeft = cv::imread(leftImagePath, CV_LOAD_IMAGE_GRAYSCALE );
         imRight = cv::imread(rightImagePath, CV_LOAD_IMAGE_GRAYSCALE );
-        imageLeftList.push_back(imLeft);
-        imageRightList.push_back(imRight);
+        imageLeftList.push(imLeft);
+        imageRightList.push(imRight);
         processImageNum++;
     }
 }
