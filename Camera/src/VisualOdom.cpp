@@ -6,6 +6,10 @@
 #include <stdio.h>
 
 using namespace std;
+using namespace Eigen;
+using namespace cv;
+using namespace Util;
+
 
 void ImageProcess::VisualOdom::GetCurrentPose(Eigen::Matrix<double, 4, 4> &pose)
 {
@@ -14,10 +18,41 @@ void ImageProcess::VisualOdom::GetCurrentPose(Eigen::Matrix<double, 4, 4> &pose)
 
 void ImageProcess::VisualOdom::FindKeypointAndTriangulation()
 {
+    std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
+    std::vector<cv::DMatch> matches;
+    find_feature_matches(currentLeftImg_, currentRightImg_, keypoints_1, keypoints_2, matches);
+    cout<<"一共找到了"<<matches.size() <<"组匹配点"<<endl;
+    //-- 把匹配点转换为vector<Point2f>的形式
+    vector<Point2f> leftPoints;
+    vector<Point2f> rightPoints;
+    vector<Point3f> worldPoints;
+    float leftIntrinsic[3][3] = {cameraLeftInfo_.cameraIntrisic_.fx_, 0.0, cameraLeftInfo_.cameraIntrisic_.cx_,
+                                 0.0, cameraLeftInfo_.cameraIntrisic_.fy_, cameraLeftInfo_.cameraIntrisic_.cy_,
+                                 0.0, 0.0, 1.0};
 
+    float rightIntrinsic[3][3] = {cameraRightInfo_.cameraIntrisic_.fx_, 0.0, cameraRightInfo_.cameraIntrisic_.cx_,
+                                 0.0, cameraRightInfo_.cameraIntrisic_.fy_, cameraRightInfo_.cameraIntrisic_.cy_,
+                                 0.0, 0.0, 1.0};
+
+    float leftTranslation[1][3] = {0.0, 0.0, 0.0};
+    float leftRotation[3][3] = {1.0,0.0,0.0,
+                                0.0,1.0,0.0,
+                                0.0,0.0,1.0};
+    float rightTranslation[1][3] = {StereoT_.x(), StereoT_.y(), StereoT_.z()};
+    float rightRotation[3][3] = {StereoR_(0,0),StereoR_(0,1),StereoR_(0,2),
+                                 StereoR_(1,0),StereoR_(1,1),StereoR_(1,2),
+                                 StereoR_(2,0),StereoR_(2,1),StereoR_(2,2),};
+
+    for(int i = 0; i < (int)matches.size(); i++) {
+        leftPoints.push_back (keypoints_1[matches[i].queryIdx].pt);
+        rightPoints.push_back (keypoints_2[matches[i].trainIdx].pt);
+        worldPoints.push_back(uv2xyz(leftPoints[i], rightPoints[i],
+               leftIntrinsic, leftRotation, leftTranslation,
+               rightIntrinsic, rightRotation, rightTranslation));
+    }
 }
 
-void ImageProcess::VisualOdom::MatchPointAndSolvePnP()
+void ImageProcess::VisualOdom::MatchPointAndICP()
 {
 
 }
@@ -36,10 +71,10 @@ void ImageProcess::VisualOdom::ProcessImage(cv::Mat &leftImage, cv::Mat &rightIm
     currentLeftImg_ = leftImage;
     currentRightImg_ = rightImage;
     FindKeypointAndTriangulation();
-    MatchPointAndSolvePnP();
+    MatchPointAndICP();
     lastLeftImg_ = currentLeftImg_;
     lastRightImg_ = currentRightImg_;
-    usleep(100000);
+    //usleep(100000);
 }
 
 void ImageProcess::VisualOdom::InitCamInfo(std::string camInfoPath)
@@ -62,91 +97,12 @@ void ImageProcess::VisualOdom::InitCamInfo(std::string camInfoPath)
     fsSettings["right_cam"]["image_height"] >> cameraRightInfo_.cameraIntrisic_.imageRow_;
     fsSettings["right_cam"]["projection_parameters"]["fx"] >> cameraRightInfo_.cameraIntrisic_.fx_;
     fsSettings["right_cam"]["projection_parameters"]["fy"] >> cameraRightInfo_.cameraIntrisic_.fy_;
+
+    StereoT_.x() = 0.6;
+    StereoT_.y() = 0.0;
+    StereoT_.z() = 0.0;
+    StereoR_ << 1.0,0.0,0.0,
+                0.0,1.0,0.0,
+                0.0,0.0,1.0;
 }
 
-
-//左相机内参数矩阵
-float leftIntrinsic[3][3] = {4037.82450,			 0,		947.65449,
-                             0,	3969.79038,		455.48718,
-                             0,			 0,				1};
-
-//左相机旋转矩阵
-float leftRotation[3][3] = {0.912333,		-0.211508,		 0.350590,
-                            0.023249,		-0.828105,		-0.560091,
-                            0.408789,		 0.519140,		-0.750590};
-//左相机平移向量
-float leftTranslation[1][3] = {-127.199992, 28.190639, 1471.356768};
-
-//右相机内参数矩阵
-float rightIntrinsic[3][3] = {3765.83307,			 0,		339.31958,
-                              0,	3808.08469,		660.05543,
-                              0,			 0,				1};
-
-//右相机旋转矩阵
-float rightRotation[3][3] = {-0.134947,		 0.989568,		-0.050442,
-                             0.752355,		 0.069205,		-0.655113,
-                             -0.644788,		-0.126356,		-0.753845};
-//右相机平移向量
-float rightTranslation[1][3] = {50.877397, -99.796492, 1507.312197};
-
-cv::Point3f uv2xyz(cv::Point2f uvLeft,cv::Point2f uvRight)
-{
-    //  [u1]      |X|					  [u2]      |X|
-    //Z*|v1| = Ml*|Y|					Z*|v2| = Mr*|Y|
-    //  [ 1]      |Z|					  [ 1]      |Z|
-    //			  |1|								|1|
-    cv::Mat mLeftRotation = cv::Mat(3,3,CV_32F,leftRotation);
-    cv::Mat mLeftTranslation = cv::Mat(3, 1, CV_32F, leftTranslation);
-    cv::Mat mLeftRT = cv::Mat(3, 4, CV_32F);//左相机M矩阵
-    hconcat(mLeftRotation,mLeftTranslation,mLeftRT);
-    cv::Mat mLeftIntrinsic = cv::Mat(3,3,CV_32F,leftIntrinsic);
-    cv::Mat mLeftM = mLeftIntrinsic * mLeftRT;
-    //cout<<"左相机M矩阵 = "<<endl<<mLeftM<<endl;
-
-    cv::Mat mRightRotation = cv::Mat(3,3,CV_32F,rightRotation);
-    cv::Mat mRightTranslation = cv::Mat(3,1,CV_32F,rightTranslation);
-    cv::Mat mRightRT = cv::Mat(3,4,CV_32F);//右相机M矩阵
-    hconcat(mRightRotation,mRightTranslation,mRightRT);
-    cv::Mat mRightIntrinsic = cv::Mat(3,3,CV_32F,rightIntrinsic);
-    cv::Mat mRightM = mRightIntrinsic * mRightRT;
-    //cout<<"右相机M矩阵 = "<<endl<<mRightM<<endl;
-
-    //最小二乘法A矩阵
-    cv::Mat A = cv::Mat(4,3,CV_32F);
-    A.at<float>(0,0) = uvLeft.x * mLeftM.at<float>(2,0) - mLeftM.at<float>(0,0);
-    A.at<float>(0,1) = uvLeft.x * mLeftM.at<float>(2,1) - mLeftM.at<float>(0,1);
-    A.at<float>(0,2) = uvLeft.x * mLeftM.at<float>(2,2) - mLeftM.at<float>(0,2);
-
-    A.at<float>(1,0) = uvLeft.y * mLeftM.at<float>(2,0) - mLeftM.at<float>(1,0);
-    A.at<float>(1,1) = uvLeft.y * mLeftM.at<float>(2,1) - mLeftM.at<float>(1,1);
-    A.at<float>(1,2) = uvLeft.y * mLeftM.at<float>(2,2) - mLeftM.at<float>(1,2);
-
-    A.at<float>(2,0) = uvRight.x * mRightM.at<float>(2,0) - mRightM.at<float>(0,0);
-    A.at<float>(2,1) = uvRight.x * mRightM.at<float>(2,1) - mRightM.at<float>(0,1);
-    A.at<float>(2,2) = uvRight.x * mRightM.at<float>(2,2) - mRightM.at<float>(0,2);
-
-    A.at<float>(3,0) = uvRight.y * mRightM.at<float>(2,0) - mRightM.at<float>(1,0);
-    A.at<float>(3,1) = uvRight.y * mRightM.at<float>(2,1) - mRightM.at<float>(1,1);
-    A.at<float>(3,2) = uvRight.y * mRightM.at<float>(2,2) - mRightM.at<float>(1,2);
-
-    //最小二乘法B矩阵
-    cv::Mat B = cv::Mat(4,1,CV_32F);
-    B.at<float>(0,0) = mLeftM.at<float>(0,3) - uvLeft.x * mLeftM.at<float>(2,3);
-    B.at<float>(1,0) = mLeftM.at<float>(1,3) - uvLeft.y * mLeftM.at<float>(2,3);
-    B.at<float>(2,0) = mRightM.at<float>(0,3) - uvRight.x * mRightM.at<float>(2,3);
-    B.at<float>(3,0) = mRightM.at<float>(1,3) - uvRight.y * mRightM.at<float>(2,3);
-
-    cv::Mat XYZ = cv::Mat(3,1,CV_32F);
-    //采用SVD最小二乘法求解XYZ
-    solve(A,B,XYZ,cv::DECOMP_SVD);
-
-    //cout<<"空间坐标为 = "<<endl<<XYZ<<endl;
-
-    //世界坐标系中坐标
-    cv::Point3f world;
-    world.x = XYZ.at<float>(0,0);
-    world.y = XYZ.at<float>(1,0);
-    world.z = XYZ.at<float>(2,0);
-
-    return world;
-}

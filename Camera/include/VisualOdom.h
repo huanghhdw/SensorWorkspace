@@ -18,7 +18,7 @@ namespace ImageProcess {
         void GetCurrentPose(Eigen::Matrix<double, 4, 4> &pose);
         void ProcessImage(cv::Mat &leftImage, cv::Mat &rightImage);
         void FindKeypointAndTriangulation();
-        void MatchPointAndSolvePnP();
+        void MatchPointAndICP();
 
     private:
         Util::CameraInfo cameraLeftInfo_;
@@ -28,6 +28,8 @@ namespace ImageProcess {
         cv::Mat lastLeftImg_;
         cv::Mat lastRightImg_;
         bool isFirstFrame_ = true;
+        Eigen::Vector3f StereoT_;
+        Eigen::Matrix3f StereoR_;
     };
 }
 #endif

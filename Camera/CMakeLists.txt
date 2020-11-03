@@ -26,7 +26,7 @@ SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/../build/bin/)
 
 #生成库文件
 add_library(VO src/VisualOdom.cpp)
-
+add_library(CO src/common.cpp)
 #生成可执行文件
 #add_executable(${PROJECT_NAME}_main ./src/main.cpp)
 #add_executable(${PROJECT_NAME}_line ./src/line.cpp)
@@ -35,7 +35,7 @@ add_executable(${PROJECT_NAME} src/start_node.cpp)
 # 链接OpenCV,Ceres库
 #target_link_libraries(${PROJECT_NAME}_main ${OpenCV_LIBS} ${CERES_LIBRARIES})
 #target_link_libraries(${PROJECT_NAME}_line ${OpenCV_LIBS} ${CERES_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES} VO)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES} VO CO)
 #message("---------------success in generate executeFile in path: ${PROJECT_SOURCE_DIR}/build/bin/-------------------")
 
 enable_testing()
