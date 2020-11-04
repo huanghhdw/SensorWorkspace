@@ -14,12 +14,11 @@ void CameraPose::UpdateAllWithEulerT()
 }
 
 void Util::find_feature_matches ( const cv::Mat& img_1, const cv::Mat& img_2,
-                            std::vector<cv::KeyPoint>& keypoints_1,
-                            std::vector<cv::KeyPoint>& keypoints_2,
+                            std::vector<cv::KeyPoint>& keypoints_1, std::vector<cv::KeyPoint>& keypoints_2,
+                            cv::Mat &descriptors_1, cv::Mat &descriptors_2,
                             std::vector< cv::DMatch >& matches )
 {
     //-- 初始化
-    cv::Mat descriptors_1, descriptors_2;
     // used in OpenCV3
     cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
     cv::Ptr<cv::DescriptorExtractor> descriptor = cv::ORB::create();
@@ -138,4 +137,74 @@ cv::Point3f Util::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvRight,
     world.z = XYZ.at<float>(2,0);
 
     return world;
+}
+
+void Util::ICP(const std::vector<Eigen::Vector3f>& pts1, const std::vector<Eigen::Vector3f>& pts2, Eigen::Matrix3f &R_12, Eigen::Vector3f &t_12)
+{
+
+    Eigen::Vector3f p1, p2;     // center of mass
+
+    int N = pts1.size();
+
+    for (int i = 0; i<N; i++)
+
+    {
+
+        p1 += pts1[i];
+
+        p2 += pts2[i];
+
+    }
+
+    p1 = Eigen::Vector3f((p1) / N);
+
+    p2 = Eigen::Vector3f((p2) / N);
+
+    std::vector<Eigen::Vector3f> q1(N), q2(N); // remove the center
+
+    for (int i = 0; i<N; i++)
+
+    {
+
+        q1[i] = pts1[i] - p1;
+
+        q2[i] = pts2[i] - p2;
+
+    }
+
+    // compute q1*q2^T
+
+    Eigen::Matrix3f W = Eigen::Matrix3f::Zero();
+
+    for (int i = 0; i<N; i++)
+
+    {
+
+        W += Eigen::Vector3f(q1[i](0), q1[i](1), q1[i](2)) * Eigen::Vector3f(q2[i](0), q2[i](1), q2[i](2)).transpose();
+
+    }
+
+    // SVD on W
+
+    Eigen::JacobiSVD<Eigen::Matrix3f> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+    Eigen::Matrix3f U = svd.matrixU();
+
+    Eigen::Matrix3f V = svd.matrixV();
+
+    R_12 = U* (V.transpose());
+
+    t_12 = Eigen::Vector3f(p1(0), p1(1), p1(2)) - R_12 * Eigen::Vector3f(p2(0), p2(1), p2(2));
+
+    // 验证
+
+    Eigen::AngleAxisf R_21;
+
+    R_21.fromRotationMatrix(R_12.transpose());
+
+//    std::cout << "aix: " << R_21.axis().transpose() << std::endl;
+//
+//    std::cout << "angle: " << R_21.angle() * 180 / PI << std::endl;
+//
+//    std::cout << "t: " << (-R_12.transpose()*t_12).transpose() << std::endl;
 }

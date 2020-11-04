@@ -17,7 +17,7 @@ namespace ImageProcess {
         void InitCamInfo(std::string camInfoPath);
         void GetCurrentPose(Eigen::Matrix<double, 4, 4> &pose);
         void ProcessImage(cv::Mat &leftImage, cv::Mat &rightImage);
-        void FindKeypointAndTriangulation();
+        void ProcessStereoImg(bool isFirst);
         void MatchPointAndICP();
 
     private:
