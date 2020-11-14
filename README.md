@@ -9,6 +9,8 @@
 （2）在SensorWorkspace目录下运行以下命令进行编译：
 
 ````shell script
+git clone https://github.com/huanghhdw/SensorWorkspace
+cd SensorWorkspace
 mkdir build
 cd build
 cmake ..
@@ -28,7 +30,15 @@ cd bin
     注意:其中ｔ平移向量代表了该传感器坐标系原点在参考坐标系中的坐标。
  ```` 
  
- ## 3.已实现的函数级功能：
+ 
+ ## 3. 双目点特征SLAM设计思路
+ 
+(1) 每一帧左右图像orb进行特点匹配，并进行三角化。
+
+(2) 前一帧左目图像中已经三角化的坐标点与当前帧左目图像进行光流跟踪，得到3D-2D对应关系，进行PNP解算。
+ 
+ 
+ ## 4.已实现的函数级功能：
  
 
  （1）对极几何求R，T

@@ -6,8 +6,9 @@
 #define VISUALODOM_H
 
 #include "common.h"
-#include <opencv2/opencv.hpp>
 #include <Eigen/Core>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/eigen.hpp>
 #include <unistd.h>
 #include <string>
 
@@ -18,7 +19,6 @@ namespace ImageProcess {
         void GetCurrentPose(Eigen::Matrix<double, 4, 4> &pose);
         void ProcessImage(cv::Mat &leftImage, cv::Mat &rightImage);
         void ProcessStereoImg(bool isFirst);
-        void MatchPointAndICP();
 
     private:
         Util::CameraInfo cameraLeftInfo_;
@@ -30,6 +30,15 @@ namespace ImageProcess {
         bool isFirstFrame_ = true;
         Eigen::Vector3f StereoT_;
         Eigen::Matrix3f StereoR_;
+
+
+        std::vector<cv::Point2d> currentLeft2DPoints_;
+        std::vector<cv::Point2d> currentRight2DPoints_;
+        std::vector<cv::Point3d> current3DPoint_;
+
+        std::vector<cv::Point2d> lastLeft2DPoints_;
+        std::vector<cv::Point2d> lastRight2DPoints_;
+        std::vector<cv::Point3d> last3DPoint_;
     };
 }
 #endif

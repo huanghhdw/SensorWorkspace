@@ -38,6 +38,7 @@ add_executable(${PROJECT_NAME} src/start_node.cpp)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES} VO CO)
 #message("---------------success in generate executeFile in path: ${PROJECT_SOURCE_DIR}/build/bin/-------------------")
 
-enable_testing()
-add_subdirectory(test)
+#enable_testing()
+#add_subdirectory(test)
+
 
