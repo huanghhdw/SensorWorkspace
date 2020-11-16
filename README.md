@@ -6,7 +6,7 @@
   eigen, gtest, glog, ceres, opencv
  ````
 
-（2）在SensorWorkspace目录下运行以下命令进行编译：
+（2）运行以下命令进行编译：
 
 ````shell script
 git clone https://github.com/huanghhdw/SensorWorkspace
@@ -56,6 +56,10 @@ cd bin
  
  ## 附录：
  ### （1）时间线：
+ 
+ 2020.11.16 减少不必要的文件，将common里面的函数调整到VO类内
+ 
+ 2020.11.14 增加光流跟踪，双目VO思路成型
  
  2020.11.04 ICP在slam框架中适配。
  
