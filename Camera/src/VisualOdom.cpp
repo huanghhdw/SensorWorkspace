@@ -26,7 +26,7 @@ void ImageProcess::VisualOdom::GetCurrentPose(Eigen::Matrix<double, 4, 4> &pose)
 void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
 {
     //step1: 前一帧左目图像中已经三角化的坐标点与当前帧左目图像进行光流跟踪，得到3D-2D对应关系，进行PNP解算。
-    if (!isFirstFrame_) {
+    if (!isFirst) {
         vector<cv::Point2d> currentKeypoints;
         vector<cv::Point2d> keypoints2DValid;
         vector<cv::Point3d> keypoints3DValid;
@@ -68,7 +68,10 @@ void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
     for(int i = 0; i < (int)matches.size(); i++) {
         lastLeft2DPoints_.push_back (keypoints_1[matches[i].queryIdx].pt);
         lastRight2DPoints_.push_back (keypoints_2[matches[i].trainIdx].pt);
-        last3DPoint_.push_back(uv2xyz(currentLeft2DPoints_[i], currentRight2DPoints_[i]));
+        last3DPoint_.push_back(uv2xyz(lastLeft2DPoints_[i], lastRight2DPoints_[i]));
+        cout << "lastLeft2DPoints: " << lastLeft2DPoints_[i].x << " " << lastLeft2DPoints_[i].y << " " << endl;
+        cout << "lastRight2DPoints: " << lastRight2DPoints_[i].x << " " << lastRight2DPoints_[i].y << " " << endl;
+        cout << "3D point: " << last3DPoint_[i].x << " " << last3DPoint_[i].y << " " << last3DPoint_[i].z << " " << endl;
     }
 }
 
@@ -104,12 +107,41 @@ void ImageProcess::VisualOdom::InitCamInfo(std::string camInfoPath)
     fsSettings["left_cam"]["image_height"] >> cameraLeftInfo_.cameraIntrisic_.imageRow_;
     fsSettings["left_cam"]["projection_parameters"]["fx"] >>cameraLeftInfo_.cameraIntrisic_.fx_;
     fsSettings["left_cam"]["projection_parameters"]["fy"] >> cameraLeftInfo_.cameraIntrisic_.fy_;
+    fsSettings["left_cam"]["projection_parameters"]["cx"] >> cameraLeftInfo_.cameraIntrisic_.cx_;
+    fsSettings["left_cam"]["projection_parameters"]["cy"] >> cameraLeftInfo_.cameraIntrisic_.cy_;
+
 
     fsSettings["right_cam"]["image_width"] >> cameraRightInfo_.cameraIntrisic_.imageCol_;
     fsSettings["right_cam"]["image_height"] >> cameraRightInfo_.cameraIntrisic_.imageRow_;
     fsSettings["right_cam"]["projection_parameters"]["fx"] >> cameraRightInfo_.cameraIntrisic_.fx_;
     fsSettings["right_cam"]["projection_parameters"]["fy"] >> cameraRightInfo_.cameraIntrisic_.fy_;
+    fsSettings["right_cam"]["projection_parameters"]["cx"] >> cameraRightInfo_.cameraIntrisic_.cx_;
+    fsSettings["right_cam"]["projection_parameters"]["cy"] >> cameraRightInfo_.cameraIntrisic_.cy_;
 
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_ = cv::Mat(3,3, CV_64F);
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,0) = cameraLeftInfo_.cameraIntrisic_.fx_;
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,1) = 0.0;
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,0) = 0.0;
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,2) = 0.0;
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,2) = 0.0;
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,1) = cameraLeftInfo_.cameraIntrisic_.fy_;
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,0) = cameraLeftInfo_.cameraIntrisic_.cx_;
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,1) = cameraLeftInfo_.cameraIntrisic_.cy_;
+    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,2) = 1.0;
+
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_ = cv::Mat(3,3, CV_64F);
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,0) = cameraRightInfo_.cameraIntrisic_.fx_;
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,1) = 0.0;
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,0) = 0.0;
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,2) = 0.0;
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,2) = 0.0;
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,1) = cameraRightInfo_.cameraIntrisic_.fy_;
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,0) = cameraRightInfo_.cameraIntrisic_.cx_;
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,1) = cameraRightInfo_.cameraIntrisic_.cy_;
+    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,2) = 1.0;
+
+    cout << "cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_:" << cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_ << endl;
+    cout << "cameraRightInfo_.cameraIntrisic_.cameraIntrisic_:" << cameraRightInfo_.cameraIntrisic_.cameraIntrisic_ << endl;
     StereoT_.x() = 0.6;
     StereoT_.y() = 0.0;
     StereoT_.z() = 0.0;
@@ -128,18 +160,21 @@ cv::Point3f ImageProcess::VisualOdom::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvR
     cv::eigen2cv(mLeftTranslationEigen, mLeftTranslation);
     cv::Mat mLeftRT = cv::Mat(3,4, CV_64F);//左相机M矩阵
     hconcat(mLeftRotation,mLeftTranslation,mLeftRT);
-    cv::Mat mLeftIntrinsic = cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_;
+    cv::Mat mLeftIntrinsic = cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.t();
     cv::Mat mLeftM = mLeftIntrinsic * mLeftRT;
 
     Matrix3d mRightRotationEigen = Matrix3d::Identity();
     Vector3d mRightTranslationEigen = Vector3d::Zero();
+    mRightTranslationEigen.x() = -0.6;
+    mRightTranslationEigen.y() = 0;
+    mRightTranslationEigen.z() = 0;
     cv::Mat mRightRotation;
     cv::eigen2cv(mRightRotationEigen, mRightRotation);
     cv::Mat mRightTranslation;
     cv::eigen2cv(mRightTranslationEigen, mRightTranslation);
     cv::Mat mRightRT = cv::Mat(3,4, CV_64F);//左相机M矩阵
     hconcat(mRightRotation,mRightTranslation,mRightRT);
-    cv::Mat mRightIntrinsic = cameraRightInfo_.cameraIntrisic_.cameraIntrisic_;
+    cv::Mat mRightIntrinsic = cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.t();
     cv::Mat mRightM = mRightIntrinsic * mRightRT;
 
     //最小二乘法A矩阵
