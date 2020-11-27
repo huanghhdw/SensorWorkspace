@@ -27,9 +27,9 @@ void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
 {
     //step1: 前一帧左目图像中已经三角化的坐标点与当前帧左目图像进行光流跟踪，得到3D-2D对应关系，进行PNP解算。
     if (!isFirst) {
-        vector<cv::Point2d> currentKeypoints;
-        vector<cv::Point2d> keypoints2DValid;
-        vector<cv::Point3d> keypoints3DValid;
+        vector<cv::Point2f> currentKeypoints;
+        vector<cv::Point2f> keypoints2DValid;
+        vector<cv::Point3f> keypoints3DValid;
         vector<unsigned char> status;   // 关键点跟踪状态标志
         vector<float> error;            //信息
         if(lastLeft2DPoints_.size() >= 5U) {
@@ -52,8 +52,11 @@ void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
             cv::cv2eigen(tvec, deltaT);
             PoseT_ = PoseT_ - PoseR_ * deltaR.transpose() * deltaT;
             PoseR_ = PoseR_ * deltaR.transpose();
+            cout << "PoseT_: x = " << PoseT_.x() << "  y:" << PoseT_.y() << " z:" << PoseT_.z() << endl;
+            sleep(1);
         } else {
             cout << "lastLeft2DPoints_.size(): " << lastLeft2DPoints_.size() << endl;
+            sleep(1);
         }
     }
 
@@ -62,16 +65,15 @@ void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
     cv::Mat descriptors_1, descriptors_2;
     std::vector<cv::DMatch> matches;
     find_feature_matches(currentLeftImg_, currentRightImg_, keypoints_1, keypoints_2,descriptors_1, descriptors_2,matches);
-    cout << "一共找到了"<< matches.size() << "组匹配点"<<endl;
-    //-- 把匹配点转换为vector<Point2f>的形式
-
     for(int i = 0; i < (int)matches.size(); i++) {
-        lastLeft2DPoints_.push_back (keypoints_1[matches[i].queryIdx].pt);
-        lastRight2DPoints_.push_back (keypoints_2[matches[i].trainIdx].pt);
-        last3DPoint_.push_back(uv2xyz(lastLeft2DPoints_[i], lastRight2DPoints_[i]));
-        cout << "lastLeft2DPoints: " << lastLeft2DPoints_[i].x << " " << lastLeft2DPoints_[i].y << " " << endl;
-        cout << "lastRight2DPoints: " << lastRight2DPoints_[i].x << " " << lastRight2DPoints_[i].y << " " << endl;
-        cout << "3D point: " << last3DPoint_[i].x << " " << last3DPoint_[i].y << " " << last3DPoint_[i].z << " " << endl;
+        cv::Point2f a = keypoints_1[matches[i].queryIdx].pt;
+        cv::Point2f b = keypoints_2[matches[i].trainIdx].pt;
+        cv::Point3f c = uv2xyz(a, b);
+        if(c.z > 0) {
+            lastLeft2DPoints_.push_back (a);
+            lastRight2DPoints_.push_back (b);
+            last3DPoint_.push_back(c);
+        }
     }
 }
 
@@ -80,8 +82,10 @@ void ImageProcess::VisualOdom::ProcessImage(cv::Mat &leftImage, cv::Mat &rightIm
     usleep(50000);
     if (isFirstFrame_) {
         isFirstFrame_ = false;
-        lastLeftImg_ = currentLeftImg_ = leftImage;
-        lastRightImg_ =  currentRightImg_ = rightImage;
+        lastLeftImg_ = leftImage;
+        currentLeftImg_ = leftImage;
+        lastRightImg_ = rightImage;
+        currentRightImg_ = rightImage;
         ProcessStereoImg(true);
         return;
     }
@@ -217,6 +221,8 @@ cv::Point3f ImageProcess::VisualOdom::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvR
     return world;
 }
 
+
+
 void ImageProcess::VisualOdom::find_feature_matches( const cv::Mat& img_1, const cv::Mat& img_2,
                                   std::vector<cv::KeyPoint>& keypoints_1, std::vector<cv::KeyPoint>& keypoints_2,
                                   cv::Mat &descriptors_1, cv::Mat &descriptors_2,
@@ -226,9 +232,6 @@ void ImageProcess::VisualOdom::find_feature_matches( const cv::Mat& img_1, const
     // used in OpenCV3
     cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
     cv::Ptr<cv::DescriptorExtractor> descriptor = cv::ORB::create();
-    // use this if you are in OpenCV2
-    // Ptr<FeatureDetector> detector = FeatureDetector::create ( "ORB" );
-    // Ptr<DescriptorExtractor> descriptor = DescriptorExtractor::create ( "ORB" );
     cv::Ptr<cv::DescriptorMatcher> matcher  = cv::DescriptorMatcher::create ( "BruteForce-Hamming" );
     //-- 第一步:检测 Oriented FAST 角点位置
     detector->detect ( img_1,keypoints_1 );
@@ -254,9 +257,6 @@ void ImageProcess::VisualOdom::find_feature_matches( const cv::Mat& img_1, const
         if ( dist > max_dist ) max_dist = dist;
     }
 
-    printf ( "-- Max dist : %f \n", max_dist );
-    printf ( "-- Min dist : %f \n", min_dist );
-
     //当描述子之间的距离大于两倍的最小距离时,即认为匹配有误.但有时候最小距离会非常小,设置一个经验值30作为下限.
     for ( int i = 0; i < descriptors_1.rows; i++ )
     {
@@ -265,20 +265,3 @@ void ImageProcess::VisualOdom::find_feature_matches( const cv::Mat& img_1, const
         }
     }
 }
-
-//double leftIntrinsic[3][3] = {cameraLeftInfo_.cameraIntrisic_.fx_, 0.0, cameraLeftInfo_.cameraIntrisic_.cx_,
-//                              0.0, cameraLeftInfo_.cameraIntrisic_.fy_, cameraLeftInfo_.cameraIntrisic_.cy_,
-//                              0.0, 0.0, 1.0};
-//
-//double rightIntrinsic[3][3] = {cameraRightInfo_.cameraIntrisic_.fx_, 0.0, cameraRightInfo_.cameraIntrisic_.cx_,
-//                               0.0, cameraRightInfo_.cameraIntrisic_.fy_, cameraRightInfo_.cameraIntrisic_.cy_,
-//                               0.0, 0.0, 1.0};
-//
-//double leftTranslation[1][3] = {0.0, 0.0, 0.0};
-//double leftRotation[3][3] = {1.0,0.0,0.0,
-//                             0.0,1.0,0.0,
-//                             0.0,0.0,1.0};
-//double rightTranslation[1][3] = {StereoT_.x(), StereoT_.y(), StereoT_.z()};
-//double rightRotation[3][3] = {StereoR_(0,0),StereoR_(0,1),StereoR_(0,2),
-//                              StereoR_(1,0),StereoR_(1,1),StereoR_(1,2),
-//                              StereoR_(2,0),StereoR_(2,1),StereoR_(2,2)};

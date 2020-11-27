@@ -38,9 +38,9 @@ namespace ImageProcess {
         std::vector<cv::Point2d> currentRight2DPoints_;
         std::vector<cv::Point3d> current3DPoint_;
 
-        std::vector<cv::Point2d> lastLeft2DPoints_;
-        std::vector<cv::Point2d> lastRight2DPoints_;
-        std::vector<cv::Point3d> last3DPoint_;
+        std::vector<cv::Point2f> lastLeft2DPoints_;
+        std::vector<cv::Point2f> lastRight2DPoints_;
+        std::vector<cv::Point3f> last3DPoint_;
 
         Eigen::Vector3d StereoT_; //双目外参
         Eigen::Matrix3d StereoR_;
