@@ -10,11 +10,13 @@ left_cam:
        k2: 0
        p1: 0
        p2: 0
-    projection_parameters:
-       fx: 7.070912000000e+02
-       fy: 7.070912000000e+02
-       cx: 6.018873000000e+02
-       cy: 1.831104000000e+02
+    intrisic_matrix: !!opencv-matrix
+       rows: 3
+       cols: 3
+       dt: d
+       data: [7.070912000000e+02, 0.0, 6.018873000000e+02,
+              0.0, 7.070912000000e+02, 1.831104000000e+02,
+              0.0, 0.0, 1.0]
 
 right_cam:
     model_type: PINHOLE
@@ -26,11 +28,13 @@ right_cam:
        k2: 0
        p1: 0
        p2: 0
-    projection_parameters:
-       fx: 7.070912000000e+02
-       fy: 7.070912000000e+02
-       cx: 6.018873000000e+02
-       cy: 1.831104000000e+02
+    intrisic_matrix: !!opencv-matrix
+       rows: 3
+       cols: 3
+       dt: d
+       data: [7.070912000000e+02, 0.0, 6.018873000000e+02,
+              0.0, 7.070912000000e+02, 1.831104000000e+02,
+              0.0, 0.0, 1.0]
 
 body_T_cam0: !!opencv-matrix
    rows: 4

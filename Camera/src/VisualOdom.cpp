@@ -77,7 +77,7 @@ void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
 
 void ImageProcess::VisualOdom::ProcessImage(cv::Mat &leftImage, cv::Mat &rightImage)
 {
-    usleep(500000);
+    usleep(100000);
     if (isFirstFrame_) {
         isFirstFrame_ = false;
         lastLeftImg_ = leftImage;
@@ -109,49 +109,27 @@ void ImageProcess::VisualOdom::InitCamInfo(std::string camInfoPath)
 
     fsSettings["left_cam"]["image_width"] >> cameraLeftInfo_.cameraIntrisic_.imageCol_;
     fsSettings["left_cam"]["image_height"] >> cameraLeftInfo_.cameraIntrisic_.imageRow_;
-    fsSettings["left_cam"]["projection_parameters"]["fx"] >>cameraLeftInfo_.cameraIntrisic_.fx_;
-    fsSettings["left_cam"]["projection_parameters"]["fy"] >> cameraLeftInfo_.cameraIntrisic_.fy_;
-    fsSettings["left_cam"]["projection_parameters"]["cx"] >> cameraLeftInfo_.cameraIntrisic_.cx_;
-    fsSettings["left_cam"]["projection_parameters"]["cy"] >> cameraLeftInfo_.cameraIntrisic_.cy_;
-
-
     fsSettings["right_cam"]["image_width"] >> cameraRightInfo_.cameraIntrisic_.imageCol_;
     fsSettings["right_cam"]["image_height"] >> cameraRightInfo_.cameraIntrisic_.imageRow_;
-    fsSettings["right_cam"]["projection_parameters"]["fx"] >> cameraRightInfo_.cameraIntrisic_.fx_;
-    fsSettings["right_cam"]["projection_parameters"]["fy"] >> cameraRightInfo_.cameraIntrisic_.fy_;
-    fsSettings["right_cam"]["projection_parameters"]["cx"] >> cameraRightInfo_.cameraIntrisic_.cx_;
-    fsSettings["right_cam"]["projection_parameters"]["cy"] >> cameraRightInfo_.cameraIntrisic_.cy_;
 
     cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_ = cv::Mat(3,3, CV_64F);
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,0) = cameraLeftInfo_.cameraIntrisic_.fx_;
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,1) = 0.0;
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,0) = 0.0;
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,2) = 0.0;
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,2) = 0.0;
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,1) = cameraLeftInfo_.cameraIntrisic_.fy_;
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,0) = cameraLeftInfo_.cameraIntrisic_.cx_;
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,1) = cameraLeftInfo_.cameraIntrisic_.cy_;
-    cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,2) = 1.0;
+    fsSettings["left_cam"]["intrisic_matrix"] >> cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_;
 
     cameraRightInfo_.cameraIntrisic_.cameraIntrisic_ = cv::Mat(3,3, CV_64F);
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,0) = cameraRightInfo_.cameraIntrisic_.fx_;
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,1) = 0.0;
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,0) = 0.0;
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(0,2) = 0.0;
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,2) = 0.0;
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(1,1) = cameraRightInfo_.cameraIntrisic_.fy_;
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,0) = cameraRightInfo_.cameraIntrisic_.cx_;
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,1) = cameraRightInfo_.cameraIntrisic_.cy_;
-    cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.at<double>(2,2) = 1.0;
+    fsSettings["right_cam"]["intrisic_matrix"] >> cameraRightInfo_.cameraIntrisic_.cameraIntrisic_;
 
-    cout << "cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_:" << cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_ << endl;
-    cout << "cameraRightInfo_.cameraIntrisic_.cameraIntrisic_:" << cameraRightInfo_.cameraIntrisic_.cameraIntrisic_ << endl;
+
     StereoT_.x() = 0.6;
     StereoT_.y() = 0.0;
     StereoT_.z() = 0.0;
     StereoR_ << 1.0,0.0,0.0,
                 0.0,1.0,0.0,
                 0.0,0.0,1.0;
+
+    cout << "Camera Left  Intrisic Matrix:" << cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_ << endl;
+    cout << "Camera Right Intrisic Matrix:" << cameraRightInfo_.cameraIntrisic_.cameraIntrisic_ << endl;
+    cout << "Init Success!!" << endl;
+    sleep(5);
 }
 
 cv::Point3f ImageProcess::VisualOdom::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvRight)
@@ -164,7 +142,7 @@ cv::Point3f ImageProcess::VisualOdom::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvR
     cv::eigen2cv(mLeftTranslationEigen, mLeftTranslation);
     cv::Mat mLeftRT = cv::Mat(3,4, CV_64F);//左相机M矩阵
     hconcat(mLeftRotation,mLeftTranslation,mLeftRT);
-    cv::Mat mLeftIntrinsic = cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_.t();
+    cv::Mat mLeftIntrinsic = cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_;
     cv::Mat mLeftM = mLeftIntrinsic * mLeftRT;
 
     Matrix3d mRightRotationEigen = Matrix3d::Identity();
@@ -178,7 +156,7 @@ cv::Point3f ImageProcess::VisualOdom::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvR
     cv::eigen2cv(mRightTranslationEigen, mRightTranslation);
     cv::Mat mRightRT = cv::Mat(3,4, CV_64F);//左相机M矩阵
     hconcat(mRightRotation,mRightTranslation,mRightRT);
-    cv::Mat mRightIntrinsic = cameraRightInfo_.cameraIntrisic_.cameraIntrisic_.t();
+    cv::Mat mRightIntrinsic = cameraRightInfo_.cameraIntrisic_.cameraIntrisic_;
     cv::Mat mRightM = mRightIntrinsic * mRightRT;
 
     //最小二乘法A矩阵

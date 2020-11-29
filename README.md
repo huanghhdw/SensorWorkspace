@@ -16,8 +16,7 @@ cd SensorWorkspace
 运行
 
 ````shell script
-cd build/bin
-./HSlam /home/huanghh/data/08 /home/huanghh/hhh_ws/SensorWorkspace/Camera/config/camera.yaml
+./build/bin/HSlam /home/huanghh/data/08 /home/huanghh/hhh_ws/SensorWorkspace/Camera/config/camera.yaml
 ````
   程序第一参数为KIITI数据包的文件路径，第二参数为相机配置文件路径。
   
