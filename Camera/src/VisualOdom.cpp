@@ -53,10 +53,8 @@ void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
             PoseT_ = PoseT_ - PoseR_ * deltaR.transpose() * deltaT;
             PoseR_ = PoseR_ * deltaR.transpose();
             cout << "PoseT_: x = " << PoseT_.x() << "  y:" << PoseT_.y() << " z:" << PoseT_.z() << endl;
-            sleep(1);
         } else {
             cout << "lastLeft2DPoints_.size(): " << lastLeft2DPoints_.size() << endl;
-            sleep(1);
         }
     }
 
@@ -79,7 +77,7 @@ void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
 
 void ImageProcess::VisualOdom::ProcessImage(cv::Mat &leftImage, cv::Mat &rightImage)
 {
-    usleep(50000);
+    usleep(500000);
     if (isFirstFrame_) {
         isFirstFrame_ = false;
         lastLeftImg_ = leftImage;
@@ -107,6 +105,8 @@ void ImageProcess::VisualOdom::InitCamInfo(std::string camInfoPath)
     if (!fsSettings.isOpened()) {
         std::cerr << "ERROR: Wrong path to settings" << std::endl;
     }
+    cv::Mat cam_k;
+
     fsSettings["left_cam"]["image_width"] >> cameraLeftInfo_.cameraIntrisic_.imageCol_;
     fsSettings["left_cam"]["image_height"] >> cameraLeftInfo_.cameraIntrisic_.imageRow_;
     fsSettings["left_cam"]["projection_parameters"]["fx"] >>cameraLeftInfo_.cameraIntrisic_.fx_;
@@ -250,7 +250,7 @@ void ImageProcess::VisualOdom::find_feature_matches( const cv::Mat& img_1, const
     double min_dist=10000, max_dist=0;
 
     //找出所有匹配之间的最小距离和最大距离, 即是最相似的和最不相似的两组点之间的距离
-    for ( int i = 0; i < descriptors_1.rows; i++ )
+    for (int i = 0; i < descriptors_1.rows; i++)
     {
         double dist = match[i].distance;
         if ( dist < min_dist ) min_dist = dist;

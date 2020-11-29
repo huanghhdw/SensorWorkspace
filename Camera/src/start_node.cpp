@@ -25,9 +25,9 @@ void Stop(int)
     readyToExit = true;
 }
 
-void ProcessDataThread() {
+void ProcessDataThread(string cameraConfigPath) {
     ImageProcess::VisualOdom visualOdom;
-    visualOdom.InitCamInfo("/home/huanghh/hhh_ws/SensorWorkspace/Camera/config/kitti_odom/cam04-12.yaml");
+    visualOdom.InitCamInfo(cameraConfigPath);
     FILE *outFile;
     outFile = fopen("/home/huanghh/vio.txt", "w");
     if (outFile == NULL)
@@ -62,9 +62,9 @@ void ProcessDataThread() {
         fclose(outFile);
 }
 
-void PubDataThread()
+void PubDataThread(string imgDataPath)
 {
-    string sequence = "/home/huanghh/data/08";
+    string sequence = imgDataPath;
     string dataPath = sequence + "/";
 
     //读取时间戳
@@ -111,8 +111,14 @@ void PubDataThread()
 int main(int argc, char** argv)
 {
     ssignal(SIGINT, Stop);
-    thread pubDataThread(PubDataThread);
-    thread processDataThread(ProcessDataThread);
+    if (argc != 3) {
+        cout << "Please Enter with KITTI Data Path and Camera Config File Path!" << endl;
+        cout << "For Example:" << endl;
+        cout << "./HSlam /home/huanghh/data/08 /home/huanghh/hhh_ws/SensorWorkspace/Camera/config/camera.yaml" << endl;
+        return -1;
+    }
+    thread pubDataThread(PubDataThread, argv[1]);
+    thread processDataThread(ProcessDataThread, argv[2]);
     pubDataThread.join();
     processDataThread.join();
 	return 0;
