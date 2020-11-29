@@ -11,15 +11,12 @@
 ````shell script
 git clone https://github.com/huanghhdw/SensorWorkspace
 cd SensorWorkspace
-mkdir build
-cd build
-cmake ..
-make
+./build.sh
 ````
 运行
 
 ````shell script
-cd bin
+cd build/bin
 ./HSlam /home/huanghh/data/08 /home/huanghh/hhh_ws/SensorWorkspace/Camera/config/camera.yaml
 ````
   程序第一参数为KIITI数据包的文件路径，第二参数为相机配置文件路径。
