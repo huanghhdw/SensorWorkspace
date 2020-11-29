@@ -13,10 +13,10 @@ set( CMAKE_BUILD_TYPE "Release" )
 # 寻找OpenCV,Eigen,Ceres库
 find_package(OpenCV REQUIRED)
 find_package(Eigen3)
-find_package(Ceres)
+#find_package(Ceres)
 
 # 添加头文件
-include_directories(${PROJECT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${CERES_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR}) #${CERES_INCLUDE_DIRS}
 
 # add sourcce files: *.cpp
 #aux_source_directory(./src  SRC_LIST)
@@ -35,7 +35,7 @@ add_executable(${PROJECT_NAME} src/start_node.cpp)
 # 链接OpenCV,Ceres库
 #target_link_libraries(${PROJECT_NAME}_main ${OpenCV_LIBS} ${CERES_LIBRARIES})
 #target_link_libraries(${PROJECT_NAME}_line ${OpenCV_LIBS} ${CERES_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES} VO CO)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} VO CO -lpthread) #${CERES_LIBRARIES}
 #message("---------------success in generate executeFile in path: ${PROJECT_SOURCE_DIR}/build/bin/-------------------")
 
 #enable_testing()
