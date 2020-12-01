@@ -25,7 +25,6 @@ namespace ImageProcess {
                 std::vector<cv::KeyPoint>& keypoints_1, std::vector<cv::KeyPoint>& keypoints_2,
                 cv::Mat &descriptors_1, cv::Mat &descriptors_2,std::vector< cv::DMatch >& matches);
 
-    private:
         Util::CameraInfo cameraLeftInfo_;
         Util::CameraInfo cameraRightInfo_;
         cv::Mat currentLeftImg_;
