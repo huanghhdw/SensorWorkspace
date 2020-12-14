@@ -129,73 +129,44 @@ void ImageProcess::VisualOdom::InitCamInfo(std::string camInfoPath)
     cout << "Camera Left  Intrisic Matrix:" << cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_ << endl;
     cout << "Camera Right Intrisic Matrix:" << cameraRightInfo_.cameraIntrisic_.cameraIntrisic_ << endl;
     cout << "Init Success!!" << endl;
-    sleep(5);
+    //sleep(1);
 }
 
 cv::Point3f ImageProcess::VisualOdom::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvRight)
 {
-    Matrix3d mLeftRotationEigen = Matrix3d::Identity();
-    Vector3d mLeftTranslationEigen = Vector3d::Zero();
-    cv::Mat mLeftRotation;
-    cv::eigen2cv(mLeftRotationEigen, mLeftRotation);
-    cv::Mat mLeftTranslation;
-    cv::eigen2cv(mLeftTranslationEigen, mLeftTranslation);
-    cv::Mat mLeftRT = cv::Mat(3,4, CV_64F);//左相机M矩阵
-    hconcat(mLeftRotation,mLeftTranslation,mLeftRT);
-    cv::Mat mLeftIntrinsic = cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_;
-    cv::Mat mLeftM = mLeftIntrinsic * mLeftRT;
+    MatrixXd A(6, 5);
+    A.block<3, 3>(0, 0) = -1.0 * Matrix3d::Identity();
+    A.block<3, 3>(3, 0) = -1.0 * Matrix3d::Identity();
+    MatrixXd l1(3, 1) ;
+    l1 << (double)uvLeft.x, (double)uvLeft.y, 1.0;
+    MatrixXd l2(3, 1) ;
+    l2 << (double)uvRight.x, (double)uvRight.y, 1.0;
 
-    Matrix3d mRightRotationEigen = Matrix3d::Identity();
-    Vector3d mRightTranslationEigen = Vector3d::Zero();
-    mRightTranslationEigen.x() = -0.6;
-    mRightTranslationEigen.y() = 0;
-    mRightTranslationEigen.z() = 0;
-    cv::Mat mRightRotation;
-    cv::eigen2cv(mRightRotationEigen, mRightRotation);
-    cv::Mat mRightTranslation;
-    cv::eigen2cv(mRightTranslationEigen, mRightTranslation);
-    cv::Mat mRightRT = cv::Mat(3,4, CV_64F);//左相机M矩阵
-    hconcat(mRightRotation,mRightTranslation,mRightRT);
-    cv::Mat mRightIntrinsic = cameraRightInfo_.cameraIntrisic_.cameraIntrisic_;
-    cv::Mat mRightM = mRightIntrinsic * mRightRT;
-
-    //最小二乘法A矩阵
-    cv::Mat A = cv::Mat(4,3,CV_64F);
-    A.at<double>(0,0) = uvLeft.x * mLeftM.at<double>(2,0) - mLeftM.at<double>(0,0);
-    A.at<double>(0,1) = uvLeft.x * mLeftM.at<double>(2,1) - mLeftM.at<double>(0,1);
-    A.at<double>(0,2) = uvLeft.x * mLeftM.at<double>(2,2) - mLeftM.at<double>(0,2);
-
-    A.at<double>(1,0) = uvLeft.y * mLeftM.at<double>(2,0) - mLeftM.at<double>(1,0);
-    A.at<double>(1,1) = uvLeft.y * mLeftM.at<double>(2,1) - mLeftM.at<double>(1,1);
-    A.at<double>(1,2) = uvLeft.y * mLeftM.at<double>(2,2) - mLeftM.at<double>(1,2);
-
-    A.at<double>(2,0) = uvRight.x * mRightM.at<double>(2,0) - mRightM.at<double>(0,0);
-    A.at<double>(2,1) = uvRight.x * mRightM.at<double>(2,1) - mRightM.at<double>(0,1);
-    A.at<double>(2,2) = uvRight.x * mRightM.at<double>(2,2) - mRightM.at<double>(0,2);
-
-    A.at<double>(3,0) = uvRight.y * mRightM.at<double>(2,0) - mRightM.at<double>(1,0);
-    A.at<double>(3,1) = uvRight.y * mRightM.at<double>(2,1) - mRightM.at<double>(1,1);
-    A.at<double>(3,2) = uvRight.y * mRightM.at<double>(2,2) - mRightM.at<double>(1,2);
-
-    //最小二乘法B矩阵
-    cv::Mat B = cv::Mat(4,1,CV_64F);
-    B.at<double>(0,0) = mLeftM.at<double>(0,3) - uvLeft.x * mLeftM.at<double>(2,3);
-    B.at<double>(1,0) = mLeftM.at<double>(1,3) - uvLeft.y * mLeftM.at<double>(2,3);
-    B.at<double>(2,0) = mRightM.at<double>(0,3) - uvRight.x * mRightM.at<double>(2,3);
-    B.at<double>(3,0) = mRightM.at<double>(1,3) - uvRight.y * mRightM.at<double>(2,3);
-
-    cv::Mat XYZ = cv::Mat(3,1,CV_64F);
-    //采用SVD最小二乘法求解XYZ
-    solve(A,B,XYZ,cv::DECOMP_SVD);
-
-    //cout<<"空间坐标为 = "<<endl<<XYZ<<endl;
-
-    //世界坐标系中坐标
-    cv::Point3f world;
-    world.x = XYZ.at<double>(0,0);
-    world.y = XYZ.at<double>(1,0);
-    world.z = XYZ.at<double>(2,0);
-
+    Matrix3d kLeft, kRight;
+    cv2eigen(cameraLeftInfo_.cameraIntrisic_.cameraIntrisic_, kLeft);
+    cv2eigen(cameraRightInfo_.cameraIntrisic_.cameraIntrisic_, kRight);
+    Matrix3d RLeft = Matrix3d::Identity();
+    Vector3d TLeft = Vector3d::Zero();
+    Matrix3d RRight = Matrix3d::Identity();
+    Vector3d TRight = Vector3d::Zero();
+    TRight.x() = -0.5;
+    TRight.y() = 0;
+    TRight.z() = 0;
+    Vector3d L1 = (kLeft * RLeft).inverse() * l1;
+    Vector3d L2 = (kRight * RRight).inverse() * l2;
+    A.block<3, 1> (0,3) = L1;
+    A.block<3, 1> (3,4) = L2;
+    Vector3d b1, b2;
+    b1 =  (kLeft * RLeft).inverse() * kLeft * TLeft;
+    b2 =  (kRight * RRight).inverse() * kRight * TRight;
+    MatrixXd B(6, 1);
+    B << b1, b2;
+    MatrixXd Result(5, 1);
+    Result = (A.transpose() * A).inverse() * A.transpose() * B;
+    Point3f world;
+    world.x = Result(0,0);
+    world.y = Result(1,0);
+    world.z = Result(2,0);
     return world;
 }
 
