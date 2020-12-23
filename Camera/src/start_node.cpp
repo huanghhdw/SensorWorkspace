@@ -19,6 +19,9 @@ std::atomic<bool> readyToExit(false);
 std::queue<cv::Mat> imageLeftList;
 std::queue<cv::Mat> imageRightList;
 
+std::atomic_int processImageNum = 0;
+std::atomic_int GoundtruthNum = 0;
+
 void Stop(int)
 {
     std::cout << "Program is soon stop!" << std::endl;
@@ -81,7 +84,6 @@ void PubDataThread(string imgDataPath)
         imageTimeList.push_back(imageTime);
     }
     std::fclose(file);
-    uint32_t processImageNum = 0;
 
     string leftImagePath, rightImagePath;
     cv::Mat imLeft, imRight;
@@ -108,6 +110,33 @@ void PubDataThread(string imgDataPath)
     }
 }
 
+void pubGoundtruth(string basePath)
+{
+    string dataPath = basePath + "/08.txt";
+    cv::namedWindow("Goundtruth", 1);
+    cv::Mat positionMap(752,960,CV_8UC3, cv::Scalar(255, 255, 255));
+    cv::Point originalPoint(positionMap.cols / 2, positionMap.rows * 3 / 4);
+
+    std::fstream goundtruthFile;
+    goundtruthFile.open(dataPath);
+    std::string line;
+    while (std::getline(goundtruthFile, line)) {
+        std::istringstream iline(line);
+        Eigen::MatrixXd groundtruthRT(3, 4);
+        for (int i = 0; i < 12; i++) {
+            iline >> groundtruthRT(i / 4, i % 4);
+        }
+        Eigen::Vector3d t = groundtruthRT.block<3, 1>(0, 3);
+        cv::circle(positionMap,cv::Point(t.x(), -t.z()) + originalPoint,1,cv::Scalar(255, 0, 0));
+        GoundtruthNum++;
+        cv::imshow("Goundtruth", positionMap);
+        cv::waitKey(1);
+        while(GoundtruthNum >= processImageNum) {
+            usleep(5000);
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     ssignal(SIGINT, Stop);
@@ -118,6 +147,7 @@ int main(int argc, char** argv)
         return -1;
     }
     thread pubDataThread(PubDataThread, argv[1]);
+    thread pubGoundtruthThread(pubGoundtruth, argv[1]);
     thread processDataThread(ProcessDataThread, argv[2]);
     pubDataThread.join();
     processDataThread.join();

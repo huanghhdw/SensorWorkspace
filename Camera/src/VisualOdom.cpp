@@ -77,7 +77,8 @@ void ImageProcess::VisualOdom::ProcessStereoImg(bool isFirst)
 
 void ImageProcess::VisualOdom::ProcessImage(cv::Mat &leftImage, cv::Mat &rightImage)
 {
-    usleep(100000);
+    return;
+    //usleep(100000);
     if (isFirstFrame_) {
         isFirstFrame_ = false;
         lastLeftImg_ = leftImage;
